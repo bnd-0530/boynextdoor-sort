@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BOYNEXTDOOR 노래 소트</title>
+  <style>
+    body { font-family: 'Nanum Gothic', 'Malgun Gothic', Arial, sans-serif; background: #fafbfc; margin: 0; padding: 0; }
+    .container { max-width: 430px; margin: 32px auto; background: #fff; border-radius: 20px; box-shadow: 0 2px 14px #0002; padding: 24px; }
+    h1 { text-align: center; color: #1e2051; margin-bottom: 18px; }
+    .desc { text-align: center; color: #6c7097; margin-bottom: 18px; }
+    .song-btn { 
+      display: block; width: 100%; margin: 10px 0; padding: 16px; font-size: 1.1em; 
+      background: #f1f4ff; border: 2px solid #9bbcff; border-radius: 12px; 
+      cursor: pointer; transition: background 0.15s, border 0.15s; 
+      font-weight: bold; color: #1e2051;
+      word-break: keep-all; white-space: pre-line;
+    }
+    .song-btn:hover { background: #e6edff; border-color: #5078ff; }
+    .progress { text-align: right; color: #aaa; font-size: 0.95em; margin-bottom: 14px;}
+    .result { margin-top: 24px; }
+    .result h2 { color: #1e2051; margin-bottom: 8px; }
+    .rank-list { list-style: none; padding: 0; }
+    .rank-list li { margin: 8px 0; font-size: 1.08em; background: #f8f9ff; border-radius: 8px; padding: 10px 14px; }
+    .restart { margin: 24px auto 0; display: block; background: #dbeafe; color: #1e2051; font-weight: bold; padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; font-size: 1em;}
+    .restart:hover { background: #c3e3ff; }
+    @media (max-width: 500px) {
+      .container { padding: 10vw 3vw; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>BOYNEXTDOOR 노래 소트</h1>
+    <div class="desc">사진에 적힌 곡명 그대로!<br>두 곡 중 더 마음에 드는 곡을 선택하세요.<br>모든 비교가 끝나면 나만의 순위가 완성됩니다.</div>
+    <div id="sortArea">
+      <div class="progress"></div>
+      <button class="song-btn" id="btnA"></button>
+      <button class="song-btn" id="btnB"></button>
+    </div>
+    <div class="result" id="resultArea" style="display:none">
+      <h2>✨ 당신의 BOYNEXTDOOR 노래 순위 ✨</h2>
+      <ol class="rank-list" id="rankList"></ol>
+      <button class="restart" onclick="restartSort()">다시 하기</button>
+    </div>
+  </div>
+  <script>
+    // 사진에 적힌 곡명, 띄어쓰기/특수문자/철자 모두 원본 그대로!
+    const songs = [
+      "돌아버리겠다",
+      "One and Only",
+      "Serenade",
+      "Crying",
+      "뭐같아",
+      "ABCDLOVE",
+      "Fadeaway",
+      "OUR",
+      "Amnesia",
+      "So let's go see the stars",
+      "Earth, Wind & Fire",
+      "l i f e i s c o o l",
+      "Dear. My Darling",
+      "Lucky Charm",
+      "GOOD DAY",
+      "부모님 관람불가",
+      "돌멩이",
+      "SKIT",
+      "Nice Guy",
+      "스물",
+      "Call Me",
+      "It's Beginning To Look A Lot Like Christmas",
+      "오늘만 I LOVE YOU",
+      "이렇게 좋아해 본 적이 없어요",
+      "123-78",
+      "I Feel Good",
+      "Step By Step",
+      "장난쳐?",
+      "Next Mistake"
+    ];
+
+    // Shuffle function
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Tournament Sort State
+    let items, pairs, scores, total, current, done;
+
+    function generatePairs(items) {
+      const pairs = [];
+      for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+          pairs.push([items[i], items[j]]);
+        }
+      }
+      return shuffle(pairs);
+    }
+
+    function startSort() {
+      items = [...songs];
+      scores = {};
+      items.forEach(s => scores[s] = 0);
+      pairs = generatePairs(items);
+      total = pairs.length;
+      current = 0;
+      done = false;
+      document.getElementById('resultArea').style.display = 'none';
+      document.getElementById('sortArea').style.display = '';
+      showNext();
+    }
+
+    function showNext() {
+      if (current >= total) {
+        showResult();
+        return;
+      }
+      const [a, b] = pairs[current];
+      document.querySelector('.progress').textContent = `비교 ${current+1} / ${total}`;
+      document.getElementById('btnA').textContent = a;
+      document.getElementById('btnB').textContent = b;
+      document.getElementById('btnA').onclick = () => pick(a);
+      document.getElementById('btnB').onclick = () => pick(b);
+    }
+
+    function pick(selected) {
+      scores[selected]++;
+      current++;
+      showNext();
+    }
+
+    function showResult() {
+      done = true;
+      document.getElementById('sortArea').style.display = 'none';
+      document.getElementById('resultArea').style.display = '';
+      // Sort by score desc, then by original order
+      const ranked = [...items].sort((a, b) =>
+        scores[b] - scores[a] || songs.indexOf(a) - songs.indexOf(b)
+      );
+      const rankList = document.getElementById('rankList');
+      rankList.innerHTML = '';
+      ranked.forEach((song, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i+1}. ${song}`;
+        rankList.appendChild(li);
+      });
+    }
+
+    function restartSort() {
+      startSort();
+    }
+
+    // 최초 시작
+    startSort();
+  </script>
+</body>
+</html>
